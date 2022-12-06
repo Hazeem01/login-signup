@@ -51,7 +51,7 @@ module.exports = {
             try {
                 const token = jwt.sign({ username: Model.username }, JWT_SECRET)
 
-                return res.status(201).json({ message: `${token}` })
+                return res.status(201).json({ message: `${username} logged in successfully!` })
             }
             catch (error) {
                 res.status(400).json({ message: error.message })
