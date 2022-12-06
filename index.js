@@ -5,7 +5,6 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const signupRoute = require('./routes/signupRoute');
 const loginRoute = require('./routes/loginRoute');
-const recoverRoute = require('./routes/reset');
 const mongoString = process.env.DATABASE_URL;
 const app = express();
 
@@ -29,4 +28,3 @@ app.use(express.json());
 app.use(bodyParser.json());
 app.use('/api/signup', signupRoute);
 app.use('/api/login', loginRoute);
-app.use('/api/reset', recoverRoute);

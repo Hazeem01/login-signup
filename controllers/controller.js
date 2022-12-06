@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 const bcrypt = require('bcryptjs');
-const Model = require('../models/signup');
+const Model = require('../models/user');
 const jwt = require('jsonwebtoken');
 const { model } = require('mongoose');
 const JWT_SECRET = process.env.JWT_SECRET;
