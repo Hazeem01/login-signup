@@ -70,5 +70,23 @@ module.exports = {
 
         util.setError(400, `Invalid password`);
         return util.send(res);
+    },
+
+    reset: async (req, res) => {
+
+
+        usersCollection.updateOne(
+            { username: username, password: password },
+            { $set: { password: newPassword } },
+            (updateErr, result) => {
+              if (updateErr) {
+                console.error(updateErr);
+              } else {
+                console.log('Password updated successfully');
+              }
+              client.close();
+            }
+          );
+
     }
 }
