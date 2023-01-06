@@ -70,5 +70,36 @@ module.exports = {
 
         util.setError(400, `Invalid password`);
         return util.send(res);
+    },
+
+    reset: async (req, res) => {
+
+        const { username, email, password: plainPassword, phone, secretQuestion, secretAnswer } = req.body;
+        if (!email || !plainPassword || !secretAnswer || !secretQuestion || !phone || !username) {
+            util.setSuccess(400, `Provide all details!`);
+            return util.send(res);
+        }
+
+        const user = await Model.findOne({ username });
+        if (!user) {
+            util.setSuccess(400, `User with the username: ${username} does not exist !`);
+            return util.send(res);
+        }
+        if (user.email == email && user.phone == phone && await bcrypt.compare(secretAnswer, user.secretAnswer) && await bcrypt.compare(secretQuestion, user.secretQuestion)) {
+            const newPassword = await bcrypt.hash(plainPassword, 10);
+            try {
+                await Model.updateOne({ username },
+                    { $set: { password: newPassword } });
+                util.setSuccess(201, `Password Updated Successfully !`);
+                return util.send(res);
+            }
+            catch (error) {
+                util.setSuccess(500, error.message);
+                return util.send(res);
+            }
+        }
+        util.setSuccess(400, `The informations you provided do not match with the user: ${username} !`);
+        return util.send(res);
+
     }
 }
