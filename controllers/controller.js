@@ -58,7 +58,7 @@ module.exports = {
         if (await bcrypt.compare(password, user.password)) {
             try {
                 const token = jwt.sign({ username: Model.username }, JWT_SECRET)
-
+                
                 util.setSuccess(201, `User logged in Successfully!`, user.username);
                 return util.send(res);
             }

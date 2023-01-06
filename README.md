@@ -1,4 +1,4 @@
-# Class Manager
+# Login-Signup API
 
 ### The technologies used in creating this project are:
 Node.js, ExpressJs, Mongoose, and MongoDB
