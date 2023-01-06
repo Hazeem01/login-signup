@@ -1,19 +1,22 @@
 require('dotenv').config();
 
 const bcrypt = require('bcryptjs');
-const Model = require('../models/user');
 const jwt = require('jsonwebtoken');
-const { model } = require('mongoose');
+const Model = require('../models/user');
+const util = require('../utils/utils');
+
 const JWT_SECRET = process.env.JWT_SECRET;
 
 module.exports = {
     signup: async (req, res) => {
         const { firstName, lastName, password: plainPassword, phone, email, username, secretQuestion: plainSecretQuestion, secretAnswer: plainSecretAnswer } = req.body;
         if (!firstName || !lastName || !plainPassword || !email || !username || !plainSecretQuestion || !plainSecretAnswer) {
-            return res.status(400).json({ message: 'Please, provide complete details!' })
+            util.setError(400, `Please, provide complete details!`);
+            return util.send(res);
         }
         if (plainPassword.length < 8) {
-            return res.status(400).json({ message: 'Password too small, it should be a minimum of 8 characters!' })
+            util.setError(400, `Password too small, it should be a minimum of 8 characters!`);
+            return util.send(res);
         }
         const password = await bcrypt.hash(plainPassword, 10)
         const secretQuestion = await bcrypt.hash(plainSecretQuestion, 10)
@@ -24,14 +27,17 @@ module.exports = {
 
         try {
             await data.save();
-            res.status(201).json({ message: 'User Created Successfully!', data })
+            util.setSuccess(201, `User: ${username} Created Successfully!`, data);
+            return util.send(res);
         }
         catch (error) {
             if (error.code === 11000) {
-                return res.status(400).json({ message: 'Username, email or phone already exists!' })
+                util.setError(400, `Username, email or phone already exists!`);
+                return util.send(res);
             }
             console.log(error)
-            res.status(500).json({ message: error.message })
+            util.setError(500, error.message);
+            util.send(res);
         }
     },
 
@@ -39,51 +45,61 @@ module.exports = {
         const { password, username } = req.body;
 
         if (!username || !password) {
-            res.status(400).json({ message: `Please, provide all details!` });
+            util.setError(400, `Please, provide all details!`);
+            return util.send(res);
         }
 
         const user = await Model.findOne({ username });
         if (!user) {
-            res.status(400).json({ message: `Invalid username/password` })
+            util.setError(400, `Invalid username/password`);
+            return util.send(res);
         }
 
         if (await bcrypt.compare(password, user.password)) {
             try {
                 const token = jwt.sign({ username: Model.username }, JWT_SECRET)
-
-                return res.status(201).json({ message: `${username} logged in successfully!` })
+                
+                util.setSuccess(201, `User logged in Successfully!`, user.username);
+                return util.send(res);
             }
             catch (error) {
-                res.status(400).json({ message: error.message })
+                util.setError(400, error.message);
+                return util.send(res);
             }
         }
 
-        return res.status(400).json({ message: `Invalid username or password!` })
+        util.setError(400, `Invalid password`);
+        return util.send(res);
     },
 
     reset: async (req, res) => {
-        const { token, username, email, password: plainPassword, phone, secretQuestion, secretAnswer } = req.body;
+
+        const { username, email, password: plainPassword, phone, secretQuestion, secretAnswer } = req.body;
         if (!email || !plainPassword || !secretAnswer || !secretQuestion || !phone || !username) {
-            return res.status(400).json({ message: `Provide all details!` })
+            util.setSuccess(400, `Provide all details!`);
+            return util.send(res);
         }
 
         const user = await Model.findOne({ username });
         if (!user) {
-            return res.status(400).json({ message: `User with the username: ${username} does not exist !` })
+            util.setSuccess(400, `User with the username: ${username} does not exist !`);
+            return util.send(res);
         }
         if (user.email == email && user.phone == phone && await bcrypt.compare(secretAnswer, user.secretAnswer) && await bcrypt.compare(secretQuestion, user.secretQuestion)) {
             const newPassword = await bcrypt.hash(plainPassword, 10);
-            const userId = user.id;
             try {
-                const verification = jwt.verify(token, JWT_SECRET);
-                await Model.updateOne(
-                    { userId }, { $set: { password: newPassword } })
-                return res.status(201).json({ message: `Password Updated Successfully !, ${verification}` });
+                await Model.updateOne({ username },
+                    { $set: { password: newPassword } });
+                util.setSuccess(201, `Password Updated Successfully !`);
+                return util.send(res);
             }
             catch (error) {
-                return res.status(500).json({ message: error.message })
+                util.setSuccess(500, error.message);
+                return util.send(res);
             }
         }
-        return res.status(400).json({ message: `The informations you provided do not match with the user: ${username} !` });
+        util.setSuccess(400, `The informations you provided do not match with the user: ${username} !`);
+        return util.send(res);
+
     }
 }
